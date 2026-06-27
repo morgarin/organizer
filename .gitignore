@@ -1,0 +1,7 @@
+*.log
+#factory.md не особо важная инфа на этапе дева
+*.env
+*.db
+postgres-data/
+redis-data/
+tmp/
