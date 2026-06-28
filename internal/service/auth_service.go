@@ -3,16 +3,15 @@ package service
 import (
 	"errors"
 	"organizer/internal/models"
-	"organizer/internal/repository"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	repo *repository.UserRepository
+	repo models.UserRepositoryInterface
 }
 
-func NewAuthService(repo *repository.UserRepository) *AuthService {
+func NewAuthService(repo models.UserRepositoryInterface) *AuthService {
 	return &AuthService{repo: repo}
 }
 
