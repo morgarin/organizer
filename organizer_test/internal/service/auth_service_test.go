@@ -72,7 +72,6 @@ func (m *mockUserRepository) FindByID(id int) (*models.User, error) {
 // Тесты
 
 func TestAuthService_Register(t *testing.T) {
-	// Создаём мок репозитория с пустыми данными
 	mockRepo := &mockUserRepository{
 		users:     make(map[string]*models.User),
 		passwords: make(map[string]string),
@@ -80,7 +79,7 @@ func TestAuthService_Register(t *testing.T) {
 
 	service := service.NewAuthService(mockRepo)
 
-	// 1. Успешная регистрация
+	// Успешная регистрация
 	err := service.Register("password123", "testuser")
 	assert.NoError(t, err)
 
@@ -89,19 +88,17 @@ func TestAuthService_Register(t *testing.T) {
 	assert.NotNil(t, user)
 	assert.Equal(t, "testuser", user.Name)
 
-	// Проверяем, что пароль захэширован (сравним bcrypt)
+	// Проверяем, что пароль захэширован
 	pass, _ := mockRepo.UserPassword("testuser")
 	err = bcrypt.CompareHashAndPassword([]byte(pass.Password), []byte("password123"))
 	assert.NoError(t, err)
 
-	// 2. Повторная регистрация с тем же именем
+	// Повторная регистрация с тем же именем
 	err = service.Register("anotherpass", "testuser")
 	assert.Error(t, err)
 	assert.Equal(t, "Пользователь с этим именем уже существует", err.Error())
 
-	// 3. Ошибка хэширования – можно вызвать bcrypt.GenerateFromPassword с пустым паролем?
-	// Но bcrypt не возвращает ошибку на пустой строке, поэтому мы можем мокировать ошибку в репозитории.
-	// Для этого изменим поведение Create, чтобы он возвращал ошибку.
+	// Ошибка хэширования
 	mockRepo.createFunc = func(user *models.User, password string) error {
 		return errors.New("db error")
 	}

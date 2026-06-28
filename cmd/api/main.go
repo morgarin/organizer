@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"organizer/internal/handlers"
 	"organizer/internal/repository"
+	"organizer/internal/server"
 	"organizer/internal/service"
 	"organizer/pkg/db"
 	"organizer/pkg/logger"
@@ -42,13 +44,22 @@ func main() {
 	mux.HandleFunc("POST /api/register", authHandler.Register)
 	mux.HandleFunc("POST /api/login", authHandler.Login)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// Настройка сервера
+	cfg := server.DefaultConfig()
+	cfg.Port = os.Getenv("PORT")
+	if cfg.Port == "" {
+		cfg.Port = "8080"
 	}
 
-	logger.Info("Server starting", "port", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
-		logger.Error("Server failed", "error", err)
+	srv := server.New(mux, cfg)
+
+	ctx := context.Background()
+	if err := srv.Run(ctx); err != nil {
+		logger.Error("Server error", "error", err)
+	}
+
+	// Запуск (блокируется до сигнала)
+	if err := srv.Run(ctx); err != nil {
+		logger.Error("Server error", "fatal", err)
 	}
 }

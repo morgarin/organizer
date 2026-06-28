@@ -3,15 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"organizer/internal/service"
+	"organizer/internal/models"
 	"organizer/pkg/logger"
 )
 
 type AuthHandler struct {
-	service *service.AuthService
+	service models.AuthServiceInterface
 }
 
-func NewAuthHandler(service *service.AuthService) *AuthHandler {
+func NewAuthHandler(service models.AuthServiceInterface) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
@@ -28,14 +28,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Debug("Не удалось распарсить json :(")
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request"})
 		return
 	}
 
 	err := h.service.Register(req.Password, req.Name)
 	if err != nil {
 		logger.Warn("Неудачная попытка регистрации")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
@@ -49,18 +53,21 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		logger.Debug("Не удалось распарсить json :(")
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request"})
 		return
 	}
 
 	_, err := h.service.Login(req.Name, req.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
-	// Здесь позже сгенерить JWT
-
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Response{Success: true})
 }
